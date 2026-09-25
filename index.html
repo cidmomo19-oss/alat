@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hapus Watermark & Penjernih Foto HD (100% Offline)</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 12px;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+            padding: 16px 0;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .badge-offline {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 0.75rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* Upload Area */
+        .upload-card {
+            background-color: var(--bg-card);
+            border: 2px dashed #475569;
+            border-radius: var(--radius-lg);
+            padding: 32px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .upload-card:hover, .upload-card.dragover {
+            border-color: var(--accent);
+            background-color: var(--bg-card-hover);
+        }
+
+        .upload-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .upload-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+
+        .upload-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Editor Section */
+        .editor-layout {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .editor-layout {
+                display: none;
+                grid-template-columns: 1fr 340px;
+                align-items: start;
+            }
+        }
+
+        .canvas-workspace {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 320px;
+            border: 1px solid var(--border);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            max-height: 60vh;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            max-height: 60vh;
+            height: auto;
+            width: auto;
+            user-select: none;
+        }
+
+        /* Brush layer on top of image */
+        #maskCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: crosshair;
+        }
+
+        /* Control Panel Sidebar */
+        .control-panel {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-control {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: #334155;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
+        .btn-danger {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-danger:hover {
+            background-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-full {
+            grid-column: span 2;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Comparison Slider */
+        .comparison-container {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .comparison-slider-wrapper {
+            position: relative;
+            width: 100%;
+            max-height: 60vh;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            user-select: none;
+        }
+
+        .comparison-img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            object-fit: contain;
+        }
+
+        .comparison-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 50%;
+            overflow: hidden;
+        }
+
+        .comparison-overlay img {
+            display: block;
+            height: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+        }
+
+        .comparison-handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            cursor: ew-resize;
+        }
+
+        .comparison-handle-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        .badge-label {
+            position: absolute;
+            top: 10px;
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+        }
+        .label-before { left: 10px; }
+        .label-after { right: 10px; }
+
+        /* Status & Loading */
+        .status-box {
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            background: rgba(59, 130, 246, 0.1);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            text-align: center;
+            display: none;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 6px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Offline Guide Modal */
+        .guide-card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        .guide-card h3 {
+            color: var(--text-main);
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .guide-card ul {
+            padding-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* Preset Chips */
+        .chip-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 4px 10px;
+            background: #334155;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .chip.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-color: var(--accent);
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 767px) {
+            header h1 { font-size: 1.25rem; }
+            .btn { padding: 8px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🪄 Hapus Watermark & Penjernih Foto HD</h1>
+        <p>Proses 100% langsung di HP/Perangkat Anda tanpa perlu koneksi internet</p>
+        <div class="badge-offline">⚡ Offline Ready (Hardware HP)</div>
+    </header>
+
+    <div class="main-container">
+        
+        <!-- File Upload Area -->
+        <div class="upload-card" id="dropArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📷</div>
+            <div class="upload-title">Pilih atau Ambil Foto</div>
+            <div class="upload-subtitle">Klik untuk pilih dari galeri HP atau seret foto ke sini (JPG, PNG, WEBP)</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <!-- Editor Layout -->
+        <div class="editor-layout" id="editorLayout">
+            <!-- Canvas Workspace -->
+            <div class="canvas-workspace">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <canvas id="imageCanvas"></canvas>
+                    <canvas id="maskCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Control Sidebar -->
+            <div class="control-panel">
+                
+                <!-- Status Box -->
+                <div class="status-box" id="statusBox">
+                    Ready
+                </div>
+
+                <!-- Step 1: Watermark & Text Removal -->
+                <div class="tool-group">
+                    <div class="section-title">
+                        <span>1️⃣ Hapus Watermark & Teks</span>
+                    </div>
+
+                    <div class="btn-grid">
+                        <button class="btn btn-secondary btn-full" id="btnAutoMask" title="Deteksi area watermark/teks otomatis">
+                            ⚡ Otomatis Deteksi Watermark
+                        </button>
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Ukuran Kuas Selek (Mask)</span>
+                            <span id="brushSizeVal">25px</span>
+                        </div>
+                        <input type="range" id="brushSize" min="5" max="80" value="25">
+                    </div>
+
+                    <div class="btn-grid">
+                        <button class="btn btn-danger" id="btnClearMask">🗑️ Hapus Selek</button>
+                        <button class="btn btn-primary" id="btnInpaint">✨ Hapus Teks Sekarang</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: HD Enhancer & Upscale -->
+                <div class="tool-group">
+                    <div class="section-title">
+                        <span>2️⃣ Penjernih & Peningkat HD</span>
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Skala Resolusi HD (Upscale)</span>
+                        </div>
+                        <div class="chip-group" id="scaleGroup">
+                            <div class="chip" data-scale="1">Normal (1x)</div>
+                            <div class="chip active" data-scale="1.5">HD (1.5x)</div>
+                            <div class="chip" data-scale="2">Ultra HD (2x)</div>
+                            <div class="chip" data-scale="3">4K (3x)</div>
+                        </div>
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Ketajaman / Sharpening</span>
+                            <span id="sharpenVal">40%</span>
+                        </div>
+                        <input type="range" id="sharpenSlider" min="0" max="100" value="40">
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Kontras & Kejernihan</span>
+                            <span id="contrastVal">+15%</span>
+                        </div>
+                        <input type="range" id="contrastSlider" min="-50" max="50" value="15">
+                    </div>
+
+                    <div class="slider-control">
+                        <div class="slider-header">
+                            <span>Kejenuhan Warna (Saturasi)</span>
+                            <span id="satVal">+10%</span>
+                        </div>
+                        <input type="range" id="satSlider" min="-50" max="50" value="10">
+                    </div>
+
+                    <button class="btn btn-primary btn-full" id="btnEnhanceHD">
+                        🚀 Terapkan Efek HD & Upscale
+                    </button>
+                </div>
+
+                <!-- Action / Reset -->
+                <div class="btn-grid">
+                    <button class="btn btn-secondary" id="btnResetImg">🔄 Reset Asli</button>
+                    <button class="btn btn-success" id="btnShowComparison">👁️ Bandingkan / Hasil</button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Before / After Comparison Area -->
+        <div class="comparison-container" id="comparisonContainer">
+            <div class="section-title">
+                <span>🔍 Hasil Sebelum & Sesudah</span>
+            </div>
+            
+            <div class="comparison-slider-wrapper" id="comparisonWrapper">
+                <img id="imgAfter" class="comparison-img" alt="Hasil HD">
+                <div class="comparison-overlay" id="comparisonOverlay">
+                    <img id="imgBefore" alt="Foto Asli">
+                </div>
+                <div class="badge-label label-before">Sebelum</div>
+                <div class="badge-label label-after">Sesudah (HD)</div>
+                <div class="comparison-handle" id="comparisonHandle">
+                    <div class="comparison-handle-btn">↔</div>
+                </div>
+            </div>
+
+            <div class="btn-grid">
+                <button class="btn btn-secondary" id="btnCloseComparison">⬅️ Kembali Edit</button>
+                <button class="btn btn-success btn-full" id="btnDownload">💾 Simpan Foto HD (Download)</button>
+            </div>
+        </div>
+
+        <!-- Offline Guide Info -->
+        <div class="guide-card">
+            <h3>📱 Cara Menggunakan Offline di HP:</h3>
+            <ul>
+                <li><strong>Android / iOS:</strong> Cukup simpan file <code>index.html</code> ini di memori HP Anda.</li>
+                <li>Buka browser seperti Chrome, Safari, atau Firefox, lalu buka file ini.</li>
+                <li>Semua proses penghapusan watermark dan HD upscaling diproses langsung oleh GPU & CPU HP Anda secara offline tanpa kuota internet!</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GLOBAL APP STATE ---
+        const fileInput = document.getElementById('fileInput');
+        const dropArea = document.getElementById('dropArea');
+        const editorLayout = document.getElementById('editorLayout');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const maskCanvas = document.getElementById('maskCanvas');
+        const imgCtx = imageCanvas.getContext('2d', { willReadFrequently: true });
+        const maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true });
+
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeVal = document.getElementById('brushSizeVal');
+        const btnClearMask = document.getElementById('btnClearMask');
+        const btnAutoMask = document.getElementById('btnAutoMask');
+        const btnInpaint = document.getElementById('btnInpaint');
+
+        const scaleGroup = document.getElementById('scaleGroup');
+        const sharpenSlider = document.getElementById('sharpenSlider');
+        const sharpenVal = document.getElementById('sharpenVal');
+        const contrastSlider = document.getElementById('contrastSlider');
+        const contrastVal = document.getElementById('contrastVal');
+        const satSlider = document.getElementById('satSlider');
+        const satVal = document.getElementById('satVal');
+        const btnEnhanceHD = document.getElementById('btnEnhanceHD');
+
+        const btnResetImg = document.getElementById('btnResetImg');
+        const btnShowComparison = document.getElementById('btnShowComparison');
+        const statusBox = document.getElementById('statusBox');
+
+        const comparisonContainer = document.getElementById('comparisonContainer');
+        const imgBefore = document.getElementById('imgBefore');
+        const imgAfter = document.getElementById('imgAfter');
+        const comparisonOverlay = document.getElementById('comparisonOverlay');
+        const comparisonHandle = document.getElementById('comparisonHandle');
+        const btnCloseComparison = document.getElementById('btnCloseComparison');
+        const btnDownload = document.getElementById('btnDownload');
+
+        let originalImgData = null; // Unmodified original HTMLImageElement
+        let currentCanvasImgData = null; // Current working ImageData on imageCanvas
+        let isDrawing = false;
+        let selectedScale = 1.5;
+
+        // --- FILE UPLOAD HANDLERS ---
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadPhoto(e.target.files[0]);
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+            }, false);
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files && dt.files[0]) {
+                loadPhoto(dt.files[0]);
+            }
+        });
+
+        function loadPhoto(file) {
+            showStatus('Membaca foto...', true);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImgData = img;
+                    setupCanvas(img);
+                    dropArea.style.display = 'none';
+                    editorLayout.style.display = 'flex';
+                    // Enable desktop grid display if screen is wide enough
+                    if (window.innerWidth >= 768) {
+                        editorLayout.style.display = 'grid';
+                    }
+                    comparisonContainer.style.display = 'none';
+                    showStatus('Foto berhasil dimuat. Usap pada watermark atau klik "Otomatis Deteksi".');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupCanvas(img) {
+            const maxDimension = 1920; // Reasonable cap for smooth browser performance
+            let w = img.width;
+            let h = img.height;
+
+            if (w > maxDimension || h > maxDimension) {
+                if (w > h) {
+                    h = Math.round((h * maxDimension) / w);
+                    w = maxDimension;
+                } else {
+                    w = Math.round((w * maxDimension) / h);
+                    h = maxDimension;
+                }
+            }
+
+            imageCanvas.width = w;
+            imageCanvas.height = h;
+            maskCanvas.width = w;
+            maskCanvas.height = h;
+
+            imgCtx.drawImage(img, 0, 0, w, h);
+            currentCanvasImgData = imgCtx.getImageData(0, 0, w, h);
+
+            clearMask();
+        }
+
+        function clearMask() {
+            maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+        }
+
+        function showStatus(msg, isSpinner = false) {
+            statusBox.style.display = 'block';
+            if (isSpinner) {
+                statusBox.innerHTML = `<span class="loader"></span>${msg}`;
+            } else {
+                statusBox.textContent = msg;
+            }
+        }
+
+        // --- MASK DRAWING (TOUCH & MOUSE) ---
+        brushSizeInput.addEventListener('input', (e) => {
+            brushSizeVal.textContent = `${e.target.value}px`;
+        });
+
+        function getCanvasCoordinates(e) {
+            const rect = maskCanvas.getBoundingClientRect();
+            const scaleX = maskCanvas.width / rect.width;
+            const scaleY = maskCanvas.height / rect.height;
+
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+            maskCtx.beginPath();
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+
+            const pos = getCanvasCoordinates(e);
+            const radius = parseInt(brushSizeInput.value, 10);
+
+            maskCtx.lineWidth = radius * 2;
+            maskCtx.lineCap = 'round';
+            maskCtx.lineJoin = 'round';
+            maskCtx.strokeStyle = 'rgba(239, 68, 68, 0.7)'; // Translucent Red for visibility
+            maskCtx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+
+            maskCtx.lineTo(pos.x, pos.y);
+            maskCtx.stroke();
+            maskCtx.beginPath();
+            maskCtx.moveTo(pos.x, pos.y);
+        }
+
+        maskCanvas.addEventListener('mousedown', startDrawing);
+        maskCanvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDrawing);
+
+        maskCanvas.addEventListener('touchstart', startDrawing, { passive: false });
+        maskCanvas.addEventListener('touchmove', draw, { passive: false });
+        maskCanvas.addEventListener('touchend', stopDrawing);
+
+        btnClearMask.addEventListener('click', clearMask);
+
+        // --- AUTOMATIC WATERMARK & TEXT DETECTION ---
+        btnAutoMask.addEventListener('click', () => {
+            showStatus('Mendeteksi watermark/teks otomatis...', true);
+            setTimeout(() => {
+                autoDetectWatermark();
+                showStatus('Deteksi otomatis selesai! Silakan sesuaikan seleksi jika diperlukan.');
+            }, 50);
+        });
+
+        function autoDetectWatermark() {
+            const w = imageCanvas.width;
+            const h = imageCanvas.height;
+            const srcData = imgCtx.getImageData(0, 0, w, h);
+            const src = srcData.data;
+
+            const maskImgData = maskCtx.createImageData(w, h);
+            const mask = maskImgData.data;
+
+            // Algorithm: Local contrast variance + edge intensity detection
+            // High sharp contrasts or overlay text usually have high gradient magnitude
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+
+                    // Compute luminance
+                    const l = 0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2];
+
+                    // Sobel horizontal and vertical luminance gradients
+                    const idxL = (y * w + (x - 1)) * 4;
+                    const idxR = (y * w + (x + 1)) * 4;
+                    const idxU = ((y - 1) * w + x) * 4;
+                    const idxD = ((y + 1) * w + x) * 4;
+
+                    const lL = 0.299 * src[idxL] + 0.587 * src[idxL + 1] + 0.114 * src[idxL + 2];
+                    const lR = 0.299 * src[idxR] + 0.587 * src[idxR + 1] + 0.114 * src[idxR + 2];
+                    const lU = 0.299 * src[idxU] + 0.587 * src[idxU + 1] + 0.114 * src[idxU + 2];
+                    const lD = 0.299 * src[idxD] + 0.587 * src[idxD + 1] + 0.114 * src[idxD + 2];
+
+                    const dx = Math.abs(lR - lL);
+                    const dy = Math.abs(lD - lU);
+                    const grad = dx + dy;
+
+                    // High contrast text/watermark edge check or pure white/black watermark overlay
+                    const isPureOverlay = (l > 240 || l < 15) && grad > 30;
+                    const isHighContrastEdge = grad > 65;
+
+                    if (isHighContrastEdge || isPureOverlay) {
+                        // Mark red overlay
+                        mask[idx] = 239;
+                        mask[idx + 1] = 68;
+                        mask[idx + 2] = 68;
+                        mask[idx + 3] = 180;
+                    }
+                }
+            }
+
+            // Dilate the mask slightly so text outlines are completely covered
+            const dilatedMask = maskCtx.createImageData(w, h);
+            const dData = dilatedMask.data;
+            const radius = 3;
+
+            for (let y = radius; y < h - radius; y += 2) {
+                for (let x = radius; x < w - radius; x += 2) {
+                    const idx = (y * w + x) * 4;
+                    if (mask[idx + 3] > 0) {
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            for (let dx = -radius; dx <= radius; dx++) {
+                                const nIdx = ((y + dy) * w + (x + dx)) * 4;
+                                dData[nIdx] = 239;
+                                dData[nIdx + 1] = 68;
+                                dData[nIdx + 2] = 68;
+                                dData[nIdx + 3] = 180;
+                            }
+                        }
+                    }
+                }
+            }
+
+            maskCtx.putImageData(dilatedMask, 0, 0);
+        }
+
+        // --- INPAINTING ALGORITHM (TELEA / FAST MARCHING INPAINTING) ---
+        btnInpaint.addEventListener('click', () => {
+            showStatus('Mengoles & Menghapus watermark...', true);
+            setTimeout(() => {
+                runInpainting();
+                clearMask();
+                showStatus('Watermark/teks berhasil dihapus!');
+            }, 50);
+        });
+
+        function runInpainting() {
+            const w = imageCanvas.width;
+            const h = imageCanvas.height;
+            const imgData = imgCtx.getImageData(0, 0, w, h);
+            const maskData = maskCtx.getImageData(0, 0, w, h);
+
+            const img = imgData.data;
+            const mask = maskData.data;
+
+            // Create binary mask array (1 for masked pixel to remove, 0 for normal pixel)
+            const m = new Uint8Array(w * h);
+            let hasMask = false;
+            for (let i = 0; i < w * h; i++) {
+                if (mask[i * 4 + 3] > 20) { // Alpha channel > threshold
+                    m[i] = 1;
+                    hasMask = true;
+                } else {
+                    m[i] = 0;
+                }
+            }
+
+            if (!hasMask) {
+                showStatus('Pilih/usap area watermark terlebih dahulu pada foto!');
+                return;
+            }
+
+            // Fast Iterative Boundary Propagation Inpainting Algorithm
+            const maxIterations = 8;
+            for (let iter = 0; iter < maxIterations; iter++) {
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const idx = y * w + x;
+                        if (m[idx] === 1) {
+                            let sumR = 0, sumG = 0, sumB = 0, totalWeight = 0;
+
+                            // 8-neighbor lookup
+                            for (let dy = -2; dy <= 2; dy++) {
+                                for (let dx = -2; dx <= 2; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    const nx = x + dx;
+                                    const ny = y + dy;
+
+                                    if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                        const nIdx = ny * w + nx;
+                                        if (m[nIdx] === 0) {
+                                            const dist = Math.sqrt(dx * dx + dy * dy);
+                                            const weight = 1.0 / (dist * dist);
+                                            const pIdx = nIdx * 4;
+
+                                            sumR += img[pIdx] * weight;
+                                            sumG += img[pIdx + 1] * weight;
+                                            sumB += img[pIdx + 2] * weight;
+                                            totalWeight += weight;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (totalWeight > 0) {
+                                const pIdx = idx * 4;
+                                img[pIdx] = sumR / totalWeight;
+                                img[pIdx + 1] = sumG / totalWeight;
+                                img[pIdx + 2] = sumB / totalWeight;
+                                m[idx] = 0; // Mark as filled in this pass
+                            }
+                        }
+                    }
+                }
+            }
+
+            imgCtx.putImageData(imgData, 0, 0);
+            currentCanvasImgData = imgCtx.getImageData(0, 0, w, h);
+        }
+
+        // --- HD ENHANCER & UPSCALE ---
+        scaleGroup.addEventListener('click', (e) => {
+            if (e.target.classList.contains('chip')) {
+                document.querySelectorAll('#scaleGroup .chip').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                selectedScale = parseFloat(e.target.dataset.scale);
+            }
+        });
+
+        sharpenSlider.addEventListener('input', (e) => sharpenVal.textContent = `${e.target.value}%`);
+        contrastSlider.addEventListener('input', (e) => contrastVal.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}%`);
+        satSlider.addEventListener('input', (e) => satVal.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}%`);
+
+        btnEnhanceHD.addEventListener('click', () => {
+            showStatus('Meningkatkan kualitas foto ke HD...', true);
+            setTimeout(() => {
+                applyHDEnhancements();
+                showStatus('Proses HD Selesai! Foto lebih tajam & jernih.');
+            }, 60);
+        });
+
+        function applyHDEnhancements() {
+            // Step A: Upscale Canvas Resolution
+            const srcW = imageCanvas.width;
+            const srcH = imageCanvas.height;
+
+            const newW = Math.round(srcW * selectedScale);
+            const newH = Math.round(srcH * selectedScale);
+
+            // Offscreen canvas for high-quality scaling
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = srcW;
+            tempCanvas.height = srcH;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(currentCanvasImgData, 0, 0);
+
+            imageCanvas.width = newW;
+            imageCanvas.height = newH;
+            maskCanvas.width = newW;
+            maskCanvas.height = newH;
+
+            // Enable smooth bicubic interpolation
+            imgCtx.imageSmoothingEnabled = true;
+            imgCtx.imageSmoothingQuality = 'high';
+            imgCtx.drawImage(tempCanvas, 0, 0, srcW, srcH, 0, 0, newW, newH);
+
+            let hdData = imgCtx.getImageData(0, 0, newW, newH);
+            let pixels = hdData.data;
+
+            // Step B: Unsharp Mask / Sharpening Convolution Filter
+            const sharpenAmount = parseInt(sharpenSlider.value, 10) / 100; // 0.0 to 1.0
+            if (sharpenAmount > 0) {
+                pixels = applySharpen(hdData, sharpenAmount);
+            }
+
+            // Step C: Color, Contrast, Brightness & Saturation Adjustments
+            const contrastFactor = parseInt(contrastSlider.value, 10);
+            const satFactor = parseInt(satSlider.value, 10);
+
+            applyColorGrading(pixels, contrastFactor, satFactor);
+
+            imgCtx.putImageData(hdData, 0, 0);
+            currentCanvasImgData = imgCtx.getImageData(0, 0, newW, newH);
+            clearMask();
+        }
+
+        function applySharpen(imgData, amount) {
+            const w = imgData.width;
+            const h = imgData.height;
+            const src = imgData.data;
+            const output = new Uint8ClampedArray(src.length);
+            output.set(src);
+
+            // 3x3 Sharpen Kernel
+            const k = amount * 0.8;
+            const center = 1 + 4 * k;
+            const edge = -k;
+
+            for (let y = 1; y < h - 1; y++) {
+                for (let x = 1; x < w - 1; x++) {
+                    const idx = (y * w + x) * 4;
+
+                    for (let c = 0; c < 3; c++) {
+                        const val = src[idx + c] * center +
+                            (src[((y - 1) * w + x) * 4 + c] +
+                             src[((y + 1) * w + x) * 4 + c] +
+                             src[(y * w + (x - 1)) * 4 + c] +
+                             src[(y * w + (x + 1)) * 4 + c]) * edge;
+
+                        output[idx + c] = Math.min(255, Math.max(0, val));
+                    }
+                    output[idx + 3] = src[idx + 3];
+                }
+            }
+
+            imgData.data.set(output);
+            return imgData.data;
+        }
+
+        function applyColorGrading(pixels, contrastVal, satVal) {
+            // Contrast Factor Formula
+            const factor = (259 * (contrastVal + 255)) / (255 * (259 - contrastVal));
+            const sat = 1 + (satVal / 100);
+
+            for (let i = 0; i < pixels.length; i += 4) {
+                let r = pixels[i];
+                let g = pixels[i + 1];
+                let b = pixels[i + 2];
+
+                // Contrast
+                r = factor * (r - 128) + 128;
+                g = factor * (g - 128) + 128;
+                b = factor * (b - 128) + 128;
+
+                // Saturation
+                const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
+                r = gray + sat * (r - gray);
+                g = gray + sat * (g - gray);
+                b = gray + sat * (b - gray);
+
+                pixels[i] = Math.min(255, Math.max(0, r));
+                pixels[i + 1] = Math.min(255, Math.max(0, g));
+                pixels[i + 2] = Math.min(255, Math.max(0, b));
+            }
+        }
+
+        // --- RESET & COMPARISON SLIDER ---
+        btnResetImg.addEventListener('click', () => {
+            if (originalImgData) {
+                setupCanvas(originalImgData);
+                showStatus('Foto dikembalikan ke bentuk asli.');
+            }
+        });
+
+        btnShowComparison.addEventListener('click', () => {
+            if (!originalImgData) return;
+
+            // Set Before and After image source
+            imgBefore.src = originalImgData.src;
+            imgAfter.src = imageCanvas.toDataURL('image/png');
+
+            editorLayout.style.display = 'none';
+            comparisonContainer.style.display = 'flex';
+        });
+
+        btnCloseComparison.addEventListener('click', () => {
+            comparisonContainer.style.display = 'none';
+            editorLayout.style.display = 'flex';
+            if (window.innerWidth >= 768) {
+                editorLayout.style.display = 'grid';
+            }
+        });
+
+        // Comparison Slider Dragging
+        let isSliding = false;
+        function setComparisonPosition(clientX) {
+            const rect = comparisonWrapper.getBoundingClientRect();
+            let x = clientX - rect.left;
+            x = Math.max(0, Math.min(x, rect.width));
+            const percent = (x / rect.width) * 100;
+
+            comparisonOverlay.style.width = `${percent}%`;
+            comparisonHandle.style.left = `${percent}%`;
+        }
+
+        const comparisonWrapper = document.getElementById('comparisonWrapper');
+        comparisonWrapper.addEventListener('mousedown', (e) => { isSliding = true; setComparisonPosition(e.clientX); });
+        window.addEventListener('mousemove', (e) => { if (isSliding) setComparisonPosition(e.clientX); });
+        window.addEventListener('mouseup', () => isSliding = false);
+
+        comparisonWrapper.addEventListener('touchstart', (e) => { isSliding = true; setComparisonPosition(e.touches[0].clientX); });
+        window.addEventListener('touchmove', (e) => { if (isSliding && e.touches[0]) setComparisonPosition(e.touches[0].clientX); });
+        window.addEventListener('touchend', () => isSliding = false);
+
+        // --- DOWNLOAD ---
+        btnDownload.addEventListener('click', () => {
+            const dataUrl = imageCanvas.toDataURL('image/png', 1.0);
+            const link = document.createElement('a');
+            link.download = `foto_hd_tanpa_watermark_${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+            showStatus('Foto HD berhasil diunduh!');
+        });
+    </script>
+</body>
+</html>
